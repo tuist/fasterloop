@@ -1,0 +1,15 @@
+{
+  "name": "fasterloop",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler d1 migrations apply fasterloop --local && wrangler dev",
+    "deploy": "wrangler d1 migrations apply fasterloop --remote && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.168.0"
+  },
+  "dependencies": {
+    "jose": "^6.2.18"
+  }
+}

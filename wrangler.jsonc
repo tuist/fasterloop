@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fasterloop",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    // Run the Worker first so it can redirect www to the apex domain and add headers.
+    "run_worker_first": true
+  },
+  "routes": [
+    { "pattern": "fasterloop.org", "custom_domain": true },
+    { "pattern": "www.fasterloop.org", "custom_domain": true }
+  ],
+  "d1_databases": [
+    // Talk proposals and venue offers. Schema in migrations/.
+    { "binding": "DB", "database_name": "fasterloop", "database_id": "92c9df22-3f4d-4ea1-9c19-50933be242f0", "migrations_dir": "migrations" }
+  ],
+  // Confirmation emails, sent from hello@fasterloop.org. Needs fasterloop.org onboarded
+  // in Email Service and the Workers Paid plan to send to arbitrary addresses.
+  "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["hello@fasterloop.org"] }],
+  "vars": {
+    // Cloudflare Access protects /admin. Fill these in from Zero Trust > Access > Applications.
+    "ACCESS_TEAM_DOMAIN": "https://tuist.cloudflareaccess.com",
+    "ACCESS_AUD": "68e11ada2b79fbf1816a8da7192c45c1a42f490c5f5640ec777c6cf122fe7bb3"
+  },
+  "observability": { "enabled": true }
+}

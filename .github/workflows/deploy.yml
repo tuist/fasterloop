@@ -1,0 +1,49 @@
+name: Deploy
+
+# Deploys fasterloop.org on every push to main. It never runs for pull requests,
+# so code from forks can't reach the Cloudflare token.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time; a newer push waits instead of racing an older one.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The token lives in this environment, which only the main branch can use.
+    environment:
+      name: production
+      url: https://fasterloop.org
+    env:
+      CLOUDFLARE_ACCOUNT_ID: cc0237353f2f825680b0463629cd4a86
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      # Migrations run before the new code goes live, so it never queries columns that don't exist yet.
+      - name: Apply database migrations
+        run: npx wrangler d1 migrations apply fasterloop --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy Worker
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
